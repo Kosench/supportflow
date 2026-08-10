@@ -1,0 +1,15 @@
+BEGIN;
+
+DELETE FROM ticket.sla_policies
+WHERE priority IN ('LOW', 'NORMAL', 'HIGH', 'CRITICAL');
+
+DELETE FROM ticket.categories
+WHERE id IN (
+             '019d0000-0000-7000-8000-000000000001',
+             '019d0000-0000-7000-8000-000000000002',
+             '019d0000-0000-7000-8000-000000000003',
+             '019d0000-0000-7000-8000-000000000004',
+             '019d0000-0000-7000-8000-000000000005'
+    );
+
+COMMIT;
