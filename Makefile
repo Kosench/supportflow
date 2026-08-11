@@ -14,7 +14,7 @@ LDFLAGS := \
 	-X '$(MODULE)/internal/platform/buildinfo.Commit=$(COMMIT)' \
 	-X '$(MODULE)/internal/platform/buildinfo.BuildTime=$(BUILD_TIME)'
 
-.PHONY: help fmt fmt-check tidy vet test check build run \
+.PHONY: help fmt fmt-check tidy vet test test-integration check build run \
 	migrate-create migrate-up migrate-down migrate-version
 
 help:
@@ -31,6 +31,7 @@ help:
 	@echo "  migrate-up      apply all migrations"
 	@echo "  migrate-down    roll back one migration"
 	@echo "  migrate-version show current migration version"
+	@echo "  test-integration  run PostgreSQL integration tests"
 
 fmt:
 	gofmt -w .
@@ -99,3 +100,12 @@ migrate-version:
 		-path $(MIGRATIONS_DIR) \
 		-database "$(DATABASE_URL)" \
 		version
+
+test-integration:
+	@test -n "$(DATABASE_URL)" || \
+		(echo "DATABASE_URL is required"; exit 1)
+	go test \
+		-tags=integration \
+		-race \
+		-count=1 \
+		./internal/ticket/infrastructure/postgres
