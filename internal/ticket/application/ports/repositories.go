@@ -58,6 +58,7 @@ type SLAPolicyRepository interface {
 type Repositories struct {
 	Tickets     TicketRepository
 	SLAPolicies SLAPolicyRepository
+	Categories  CategoryRepository
 }
 
 type UnitOfWork interface {
