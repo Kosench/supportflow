@@ -41,6 +41,7 @@ func (unit *UnitOfWork) WithinTransaction(
 	repositories := ports.Repositories{
 		Tickets:     NewTicketRepository(tx),
 		SLAPolicies: NewSLAPolicyRepository(tx),
+		Categories:  NewCategoryRepository(tx),
 	}
 
 	if err := fn(repositories); err != nil {

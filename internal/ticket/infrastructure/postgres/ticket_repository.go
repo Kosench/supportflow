@@ -147,10 +147,7 @@ func (repository *TicketRepository) Create(
 	return nil
 }
 
-func (repository *TicketRepository) GetByID(
-	ctx context.Context,
-	ticketID domain.TicketID,
-) (*domain.Ticket, error) {
+func (repository *TicketRepository) GetByID(ctx context.Context, ticketID domain.TicketID) (*domain.Ticket, error) {
 	if ticketID.IsZero() {
 		return nil, fmt.Errorf(
 			"get ticket: %w",
@@ -180,11 +177,7 @@ func (repository *TicketRepository) GetByID(
 	return ticket, nil
 }
 
-func (repository *TicketRepository) Update(
-	ctx context.Context,
-	ticket *domain.Ticket,
-	expectedVersion uint64,
-) error {
+func (repository *TicketRepository) Update(ctx context.Context, ticket *domain.Ticket, expectedVersion uint64) error {
 	if ticket == nil {
 		return fmt.Errorf("update ticket: ticket must not be nil")
 	}
