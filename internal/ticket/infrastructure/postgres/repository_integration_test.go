@@ -407,3 +407,34 @@ func mustSucceed(t *testing.T, err error) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestCategoryRepositoryReadsSeedState(t *testing.T) {
+	pool := openTestPool(t)
+	repository := ticketpostgres.NewCategoryRepository(pool)
+
+	categoryID, err := domain.ParseCategoryID(vpnCategoryID)
+	mustSucceed(t, err)
+
+	active, err := repository.IsActive(
+		context.Background(),
+		categoryID,
+	)
+	mustSucceed(t, err)
+
+	if !active {
+		t.Error("VPN seed category must be active")
+	}
+
+	missingID, err := domain.NewCategoryID()
+	mustSucceed(t, err)
+
+	active, err = repository.IsActive(
+		context.Background(),
+		missingID,
+	)
+	mustSucceed(t, err)
+
+	if active {
+		t.Error("missing category must not be active")
+	}
+}
