@@ -554,12 +554,7 @@ func (ticket *Ticket) Cancel(reason string, now time.Time) error {
 	return nil
 }
 
-func (ticket *Ticket) ChangePriority(
-	priority Priority,
-	reason string,
-	sla SLATarget,
-	now time.Time,
-) error {
+func (ticket *Ticket) ChangePriority(priority Priority, reason string, sla SLATarget, now time.Time) error {
 	switch ticket.status {
 	case StatusNew,
 		StatusAssigned,
