@@ -21,3 +21,7 @@ Thumbs.db
 # Temporary files
 tmp/
 *.tmp
+
+/my_project
+
+/docs

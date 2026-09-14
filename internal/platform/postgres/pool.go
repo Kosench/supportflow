@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Config представляет собой структуру конфигурации для настройки соединения с базой данных PostgreSQL.
 type Config struct {
 	URL               string
 	ApplicationName   string
@@ -20,6 +21,8 @@ type Config struct {
 	ConnectTimeout    time.Duration
 }
 
+// DefaultConfig создаёт и возвращает новую конфигурацию PostgreSQL с параметрами по умолчанию,
+// используя переданные URL и имя приложения.
 func DefaultConfig(url, applicationName string) Config {
 	return Config{
 		URL:               url,
@@ -32,6 +35,9 @@ func DefaultConfig(url, applicationName string) Config {
 		ConnectTimeout:    5 * time.Second,
 	}
 }
+
+// Open устанавливает подключение к базе данных PostgreSQL на основе заданной конфигурации.
+// Возвращает объект пула соединений pgxpool.Pool или ошибку, если возникли проблемы при подключении.
 func Open(ctx context.Context, config Config) (*pgxpool.Pool, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
@@ -65,6 +71,8 @@ func Open(ctx context.Context, config Config) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
+// Validate проверяет корректность значений полей конфигурации перед попыткой установления соединения.
+// Возвратит ошибку, если обнаружены некорректно заполненные поля.
 func (cfg Config) Validate() error {
 	if strings.TrimSpace(cfg.URL) == "" {
 		return fmt.Errorf("PostgreSQL URL must not be empty")
