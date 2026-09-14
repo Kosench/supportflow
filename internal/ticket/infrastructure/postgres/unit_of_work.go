@@ -42,6 +42,7 @@ func (unit *UnitOfWork) WithinTransaction(
 		Tickets:     NewTicketRepository(tx),
 		SLAPolicies: NewSLAPolicyRepository(tx),
 		Categories:  NewCategoryRepository(tx),
+		Operators:   NewOperatorRepository(tx),
 	}
 
 	if err := fn(repositories); err != nil {

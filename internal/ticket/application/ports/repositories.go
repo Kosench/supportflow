@@ -37,15 +37,9 @@ func (err VersionConflictError) Unwrap() error {
 
 type TicketRepository interface {
 	Create(ctx context.Context, ticket *domain.Ticket) error
-	GetByID(
-		ctx context.Context,
-		ticketID domain.TicketID,
-	) (*domain.Ticket, error)
-	Update(
-		ctx context.Context,
-		ticket *domain.Ticket,
-		expectedVersion uint64,
-	) error
+	GetByID(ctx context.Context, ticketID domain.TicketID) (*domain.Ticket, error)
+	Update(ctx context.Context, ticket *domain.Ticket, expectedVersion uint64) error
+	GetByIDForUpdate(ctx context.Context, ticketID domain.TicketID) (*domain.Ticket, error)
 }
 
 type SLAPolicyRepository interface {
@@ -59,6 +53,7 @@ type Repositories struct {
 	Tickets     TicketRepository
 	SLAPolicies SLAPolicyRepository
 	Categories  CategoryRepository
+	Operators   OperatorRepository
 }
 
 type UnitOfWork interface {

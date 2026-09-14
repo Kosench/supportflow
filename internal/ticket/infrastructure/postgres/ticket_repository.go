@@ -56,10 +56,7 @@ func NewTicketRepository(db DBTX) *TicketRepository {
 	return &TicketRepository{db: db}
 }
 
-func (repository *TicketRepository) Create(
-	ctx context.Context,
-	ticket *domain.Ticket,
-) error {
+func (repository *TicketRepository) Create(ctx context.Context, ticket *domain.Ticket) error {
 	if ticket == nil {
 		return fmt.Errorf("create ticket: ticket must not be nil")
 	}
@@ -299,11 +296,7 @@ func (repository *TicketRepository) currentVersion(
     `
 
 	var version int64
-	err := repository.db.QueryRow(
-		ctx,
-		query,
-		ticketID.String(),
-	).Scan(&version)
+	err := repository.db.QueryRow(ctx, query, ticketID.String()).Scan(&version)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, fmt.Errorf(
 			"%w: %s",
@@ -323,4 +316,35 @@ func (repository *TicketRepository) currentVersion(
 	}
 
 	return uint64(version), nil
+}
+
+func (repository *TicketRepository) GetByIDForUpdate(
+	ctx context.Context,
+	ticketID domain.TicketID,
+) (*domain.Ticket, error) {
+	if ticketID.IsZero() {
+		return nil, fmt.Errorf(
+			"get ticket for update %w",
+			domain.ErrValidation,
+		)
+	}
+
+	query := `SELECT ` + ticketColumns + `
+        FROM ticket.tickets
+        WHERE id = $1
+        FOR UPDATE
+    `
+	ticket, err := scanTicket(repository.db.QueryRow(ctx, query, ticketID.String()))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf(
+			"%w: %s",
+			ports.ErrTicketNotFound,
+			ticketID,
+		)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("scan lockedd ticket: %w", err)
+	}
+
+	return ticket, nil
 }
