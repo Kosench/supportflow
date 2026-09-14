@@ -111,6 +111,13 @@ func (repository *fakeTicketRepository) put(ticket *domain.Ticket) {
 	repository.tickets[snapshot.ID] = snapshot
 }
 
+func (repository *fakeTicketRepository) GetByIDForUpdate(
+	ctx context.Context,
+	ticketID domain.TicketID,
+) (*domain.Ticket, error) {
+	return repository.GetByID(ctx, ticketID)
+}
+
 type fakeSLAPolicyRepository struct {
 	targets map[domain.Priority]domain.SLATarget
 	err     error

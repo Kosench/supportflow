@@ -769,12 +769,7 @@ func initialTime(now time.Time) (time.Time, error) {
 	return now.UTC(), nil
 }
 
-func requiredText(
-	field string,
-	value string,
-	minLength int,
-	maxLength int,
-) (string, error) {
+func requiredText(field string, value string, minLength int, maxLength int) (string, error) {
 	normalized := strings.TrimSpace(value)
 	length := utf8.RuneCountInString(normalized)
 

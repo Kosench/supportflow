@@ -34,10 +34,7 @@ func TestTicketRepositoryCreateAndGet(t *testing.T) {
 		t.Fatalf("Create() returned error: %v", err)
 	}
 
-	loaded, err := repository.GetByID(
-		context.Background(),
-		original.Snapshot().ID,
-	)
+	loaded, err := repository.GetByID(context.Background(), original.Snapshot().ID)
 	if err != nil {
 		t.Fatalf("GetByID() returned error: %v", err)
 	}
@@ -91,11 +88,7 @@ func TestTicketRepositoryUpdatesSeveralChangesAtOnce(t *testing.T) {
 	now := loaded.Snapshot().CreatedAt
 	mustSucceed(t, loaded.Assign(operatorID, now.Add(time.Minute)))
 	mustSucceed(t, loaded.StartProgress(now.Add(2*time.Minute)))
-	mustSucceed(t, repository.Update(
-		ctx,
-		loaded,
-		expectedVersion,
-	))
+	mustSucceed(t, repository.Update(ctx, loaded, expectedVersion))
 
 	stored, err := repository.GetByID(ctx, original.Snapshot().ID)
 	mustSucceed(t, err)
@@ -141,25 +134,11 @@ func TestTicketRepositoryDetectsVersionConflict(t *testing.T) {
 
 	expectedVersion := firstCopy.Snapshot().Version
 	now := original.Snapshot().CreatedAt
-	mustSucceed(t, firstCopy.Assign(
-		firstOperatorID,
-		now.Add(time.Minute),
-	))
-	mustSucceed(t, repository.Update(
-		ctx,
-		firstCopy,
-		expectedVersion,
-	))
+	mustSucceed(t, firstCopy.Assign(firstOperatorID, now.Add(time.Minute)))
+	mustSucceed(t, repository.Update(ctx, firstCopy, expectedVersion))
 
-	mustSucceed(t, secondCopy.Assign(
-		secondOperatorID,
-		now.Add(2*time.Minute),
-	))
-	err = repository.Update(
-		ctx,
-		secondCopy,
-		expectedVersion,
-	)
+	mustSucceed(t, secondCopy.Assign(secondOperatorID, now.Add(2*time.Minute)))
+	err = repository.Update(ctx, secondCopy, expectedVersion)
 
 	if !errors.Is(err, ports.ErrVersionConflict) {
 		t.Fatalf("expected ErrVersionConflict, got %v", err)
@@ -261,10 +240,7 @@ func openTestPool(t *testing.T) *pgxpool.Pool {
 		t.Skip("DATABASE_URL is not set")
 	}
 
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
-	)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	cfg := platformpostgres.DefaultConfig(
@@ -415,10 +391,7 @@ func TestCategoryRepositoryReadsSeedState(t *testing.T) {
 	categoryID, err := domain.ParseCategoryID(vpnCategoryID)
 	mustSucceed(t, err)
 
-	active, err := repository.IsActive(
-		context.Background(),
-		categoryID,
-	)
+	active, err := repository.IsActive(context.Background(), categoryID)
 	mustSucceed(t, err)
 
 	if !active {
@@ -428,10 +401,7 @@ func TestCategoryRepositoryReadsSeedState(t *testing.T) {
 	missingID, err := domain.NewCategoryID()
 	mustSucceed(t, err)
 
-	active, err = repository.IsActive(
-		context.Background(),
-		missingID,
-	)
+	active, err = repository.IsActive(context.Background(), missingID)
 	mustSucceed(t, err)
 
 	if active {
