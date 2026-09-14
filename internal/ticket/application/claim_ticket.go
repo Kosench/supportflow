@@ -3,38 +3,52 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Kosench/supportflow/internal/ticket/application/ports"
 	"github.com/Kosench/supportflow/internal/ticket/domain"
 )
 
-type AutoAssignTicketCommand struct {
-	TicketID string
+type ClaimTicketCommand struct {
+	Actor           Actor
+	TicketID        string
+	ExpectedVersion uint64
 }
 
-type AutoAssignTicketHandler struct {
+type ClaimTicketHandler struct {
 	unitOfWork ports.UnitOfWork
 	clock      ports.Clock
 }
 
-func NewAutoAssignTicketHandler(
+func NewClaimTicketHandler(
 	unitOfWork ports.UnitOfWork,
 	clock ports.Clock,
-) (AutoAssignTicketHandler, error) {
+) (ClaimTicketHandler, error) {
 	if unitOfWork == nil || clock == nil {
-		return AutoAssignTicketHandler{}, ErrInvalidDependency
+		return ClaimTicketHandler{}, ErrInvalidDependency
 	}
-
-	return AutoAssignTicketHandler{
+	return ClaimTicketHandler{
 		unitOfWork: unitOfWork,
 		clock:      clock,
 	}, nil
 }
 
-func (h AutoAssignTicketHandler) Handle(
+func (h ClaimTicketHandler) Handle(
 	ctx context.Context,
-	command AutoAssignTicketCommand,
+	command ClaimTicketCommand,
 ) (AssignmentResult, error) {
+	if err := command.Actor.Valid(); err != nil {
+		return AssignmentResult{}, err
+	}
+
+	if command.Actor.Role != RoleOperator {
+		return AssignmentResult{}, deny(command.Actor, "ticket.claim")
+	}
+
+	if err := validateExpectedVersion(command.ExpectedVersion); err != nil {
+		return AssignmentResult{}, err
+	}
+
 	ticketID, err := domain.ParseTicketID(command.TicketID)
 	if err != nil {
 		return AssignmentResult{}, err
@@ -44,30 +58,28 @@ func (h AutoAssignTicketHandler) Handle(
 	err = h.unitOfWork.WithinTransaction(
 		ctx,
 		func(repositories ports.Repositories) error {
-			ticket, err := repositories.Tickets.GetByIDForUpdate(ctx, ticketID)
+			ticket, err := repositories.Tickets.GetByIDForUpdate(
+				ctx,
+				ticketID,
+			)
 			if err != nil {
 				return err
 			}
 
 			snapshot := ticket.Snapshot()
-			if snapshot.AssigneeID != nil {
-				result = newAssignmentResult(ticket, false)
-				return nil
-			}
-
-			if err := ensureUnassignedTicket(ticket); err != nil {
-				return err
-			}
-
 			now := h.clock.Now()
-			candidate, err := repositories.Operators.FindBestForUpdate(
+			_, err = repositories.Operators.LockEligibleForUpdate(
 				ctx,
+				command.Actor.UserID,
 				snapshot.CategoryID,
 				now,
 			)
 			if errors.Is(err, ports.ErrNoEligibleOperator) {
-				result = newAssignmentResult(ticket, false)
-				return nil
+				return fmt.Errorf(
+					"%w: %s",
+					ErrOperatorUnavailable,
+					command.Actor.UserID,
+				)
 			}
 			if err != nil {
 				return err
@@ -75,7 +87,7 @@ func (h AutoAssignTicketHandler) Handle(
 
 			eligible, err := repositories.Operators.IsEligible(
 				ctx,
-				candidate.UserID,
+				command.Actor.UserID,
 				snapshot.CategoryID,
 				now,
 			)
@@ -83,11 +95,29 @@ func (h AutoAssignTicketHandler) Handle(
 				return err
 			}
 			if !eligible {
-				result = newAssignmentResult(ticket, false)
-				return nil
+				return fmt.Errorf(
+					"%w: %s",
+					ErrOperatorUnavailable,
+					command.Actor.UserID,
+				)
 			}
 
-			if err := ticket.Assign(candidate.UserID, now); err != nil {
+			if err := ensureUnassignedTicket(ticket); err != nil {
+				return err
+			}
+
+			if err := checkExpectedVersion(
+				ticketID,
+				command.ExpectedVersion,
+				snapshot.Version,
+			); err != nil {
+				return err
+			}
+
+			if err := ticket.Assign(
+				command.Actor.UserID,
+				now,
+			); err != nil {
 				return err
 			}
 
@@ -101,7 +131,7 @@ func (h AutoAssignTicketHandler) Handle(
 
 			if err := repositories.Operators.MarkAssigned(
 				ctx,
-				candidate.UserID,
+				command.Actor.UserID,
 				now,
 			); err != nil {
 				return err

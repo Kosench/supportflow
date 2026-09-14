@@ -12,6 +12,8 @@ var (
 	ErrPermissionDenied    = errors.New("permission denied")
 	ErrCategoryUnavailable = errors.New("category is unavailable")
 	ErrInvalidDependency   = errors.New("invalid application dependency")
+	ErrTicketNotAssignable = errors.New("ticket is not assignable")
+	ErrOperatorUnavailable = errors.New("operator is unavailable")
 )
 
 type Role string
