@@ -40,9 +40,7 @@ func (handler CancelTicketHandler) Handle(ctx context.Context, command CancelTic
 		return TicketView{}, err
 	}
 
-	if err := validateExpectedVersion(
-		command.ExpectedVersion,
-	); err != nil {
+	if err := validateExpectedVersion(command.ExpectedVersion); err != nil {
 		return TicketView{}, err
 	}
 

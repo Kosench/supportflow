@@ -20,10 +20,7 @@ type ClaimTicketHandler struct {
 	clock      ports.Clock
 }
 
-func NewClaimTicketHandler(
-	unitOfWork ports.UnitOfWork,
-	clock ports.Clock,
-) (ClaimTicketHandler, error) {
+func NewClaimTicketHandler(unitOfWork ports.UnitOfWork, clock ports.Clock) (ClaimTicketHandler, error) {
 	if unitOfWork == nil || clock == nil {
 		return ClaimTicketHandler{}, ErrInvalidDependency
 	}
@@ -33,10 +30,7 @@ func NewClaimTicketHandler(
 	}, nil
 }
 
-func (h ClaimTicketHandler) Handle(
-	ctx context.Context,
-	command ClaimTicketCommand,
-) (AssignmentResult, error) {
+func (h ClaimTicketHandler) Handle(ctx context.Context, command ClaimTicketCommand) (AssignmentResult, error) {
 	if err := command.Actor.Valid(); err != nil {
 		return AssignmentResult{}, err
 	}

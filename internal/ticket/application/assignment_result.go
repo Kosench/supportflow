@@ -9,10 +9,7 @@ type AssignmentResult struct {
 	OperatorID *string
 }
 
-func newAssignmentResult(
-	ticket *domain.Ticket,
-	changed bool,
-) AssignmentResult {
+func newAssignmentResult(ticket *domain.Ticket, changed bool) AssignmentResult {
 	snapshot := ticket.Snapshot()
 
 	return AssignmentResult{

@@ -17,10 +17,7 @@ type AutoAssignTicketHandler struct {
 	clock      ports.Clock
 }
 
-func NewAutoAssignTicketHandler(
-	unitOfWork ports.UnitOfWork,
-	clock ports.Clock,
-) (AutoAssignTicketHandler, error) {
+func NewAutoAssignTicketHandler(unitOfWork ports.UnitOfWork, clock ports.Clock) (AutoAssignTicketHandler, error) {
 	if unitOfWork == nil || clock == nil {
 		return AutoAssignTicketHandler{}, ErrInvalidDependency
 	}
@@ -31,10 +28,7 @@ func NewAutoAssignTicketHandler(
 	}, nil
 }
 
-func (h AutoAssignTicketHandler) Handle(
-	ctx context.Context,
-	command AutoAssignTicketCommand,
-) (AssignmentResult, error) {
+func (h AutoAssignTicketHandler) Handle(ctx context.Context, command AutoAssignTicketCommand) (AssignmentResult, error) {
 	ticketID, err := domain.ParseTicketID(command.TicketID)
 	if err != nil {
 		return AssignmentResult{}, err
