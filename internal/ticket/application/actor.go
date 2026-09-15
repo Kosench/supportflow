@@ -92,10 +92,7 @@ func authorizeRead(actor Actor, ticket *domain.Ticket) error {
 	return deny(actor, "ticket.read")
 }
 
-func authorizePriorityChange(
-	actor Actor,
-	ticket *domain.Ticket,
-) error {
+func authorizePriorityChange(actor Actor, ticket *domain.Ticket) error {
 	snapshot := ticket.Snapshot()
 
 	switch actor.Role {
