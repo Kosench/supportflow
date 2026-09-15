@@ -1,14 +1,15 @@
-package application
+package assignment
 
 import (
 	"context"
 
+	"github.com/Kosench/supportflow/internal/ticket/application"
 	"github.com/Kosench/supportflow/internal/ticket/application/ports"
 	"github.com/Kosench/supportflow/internal/ticket/domain"
 )
 
 type ForceAssignTicketCommand struct {
-	Actor            Actor
+	Actor            application.Actor
 	TicketID         string
 	TargetOperatorID string
 	ExpectedVersion  uint64
@@ -24,7 +25,7 @@ func NewForceAssignTicketHandler(
 	clock ports.Clock,
 ) (ForceAssignTicketHandler, error) {
 	if unitOfWork == nil || clock == nil {
-		return ForceAssignTicketHandler{}, ErrInvalidDependency
+		return ForceAssignTicketHandler{}, application.ErrInvalidDependency
 	}
 
 	return ForceAssignTicketHandler{
@@ -36,36 +37,36 @@ func NewForceAssignTicketHandler(
 func (handler ForceAssignTicketHandler) Handle(
 	ctx context.Context,
 	command ForceAssignTicketCommand,
-) (AssignmentResult, error) {
+) (application.AssignmentResult, error) {
 	if err := command.Actor.Valid(); err != nil {
-		return AssignmentResult{}, err
+		return application.AssignmentResult{}, err
 	}
 
-	if command.Actor.Role != RoleManager &&
-		command.Actor.Role != RoleAdmin {
-		return AssignmentResult{}, deny(
+	if command.Actor.Role != application.RoleManager &&
+		command.Actor.Role != application.RoleAdmin {
+		return application.AssignmentResult{}, application.deny(
 			command.Actor,
 			"ticket.force_assign",
 		)
 	}
 
-	if err := validateExpectedVersion(
+	if err := application.validateExpectedVersion(
 		command.ExpectedVersion,
 	); err != nil {
-		return AssignmentResult{}, err
+		return application.AssignmentResult{}, err
 	}
 
 	ticketID, err := domain.ParseTicketID(command.TicketID)
 	if err != nil {
-		return AssignmentResult{}, err
+		return application.AssignmentResult{}, err
 	}
 
 	operatorID, err := domain.ParseUserID(command.TargetOperatorID)
 	if err != nil {
-		return AssignmentResult{}, err
+		return application.AssignmentResult{}, err
 	}
 
-	var result AssignmentResult
+	var result application.AssignmentResult
 	err = handler.unitOfWork.WithinTransaction(
 		ctx,
 		func(repositories ports.Repositories) error {
@@ -78,7 +79,7 @@ func (handler ForceAssignTicketHandler) Handle(
 			}
 
 			loadedVersion := ticket.Snapshot().Version
-			if err := checkExpectedVersion(
+			if err := application.checkExpectedVersion(
 				ticketID,
 				command.ExpectedVersion,
 				loadedVersion,
@@ -114,12 +115,12 @@ func (handler ForceAssignTicketHandler) Handle(
 				return err
 			}
 
-			result = newAssignmentResult(ticket, true)
+			result = application.newAssignmentResult(ticket, true)
 			return nil
 		},
 	)
 	if err != nil {
-		return AssignmentResult{}, err
+		return application.AssignmentResult{}, err
 	}
 
 	return result, nil
